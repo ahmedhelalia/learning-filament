@@ -10,7 +10,9 @@ use Filament\Forms;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Group;
 use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\TextInput;
@@ -20,6 +22,7 @@ use Filament\Tables;
 use Filament\Tables\Columns\CheckboxColumn;
 use Filament\Tables\Columns\ColorColumn;
 use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -35,24 +38,37 @@ class PostResource extends Resource
     {
         return $form
             ->schema([
-                TextInput::make('title')->required(),
-                TextInput::make('slug')->required(),
-                ColorPicker::make('color')->required(),
+                Section::make('create post')
+                    ->description('create post over here')
+                    ->schema([
+                        TextInput::make('title')->required(),
+                        TextInput::make('slug')->required(),
+                        ColorPicker::make('color')->required(),
 
-                Select::make('category_id')
-                    ->label('Category')
-                    ->options(Category::all()->pluck('name', 'id'))
-                    ->required(),
+                        Select::make('category_id')
+                            ->label('Category')
+                            ->options(Category::all()->pluck('name', 'id'))
+                            ->required(),
+                        RichEditor::make('content')->required()->columnSpanFull(),
+                    ])->columnSpan(2)->columns(2),
 
-                TagsInput::make('tags')->required(),
-                Checkbox::make('published')->required(),
-                RichEditor::make('content')->required(),
+                Group::make()->schema([
+                    Section::make('Image')
+                        ->collapsible()
+                        ->schema([
+                            FileUpload::make('thumbnail')
+                                ->disk('public')
+                                ->directory('thumbnails')
+                                ->required(),
+                        ]),
+                    Section::make('Meta')
+                        ->schema([
+                            TagsInput::make('tags')->required(),
+                            Checkbox::make('published')->required(),
+                        ])->columnSpan(1),
+                ]),
 
-                FileUpload::make('thumbnail')
-                    ->disk('public')
-                    ->directory('thumbnails')
-                    ->required(),
-            ]);
+            ])->columns(3);
     }
 
     public static function table(Table $table): Table
